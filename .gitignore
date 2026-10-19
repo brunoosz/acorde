@@ -1,0 +1,52 @@
+# Flutter & Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Visual Studio Code / IDEs
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.fleet/
+
+# Environment, Secrets & API Keys
+.env*
+*.env
+api_keys.json
+secrets/
+
+# Local Database & User Data (NEVER version personal data, questionnaire answers, or lyrics)
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+user_data/
+lyrics_cache/
+
+# Android
+android/key.properties
+android/app/*.keystore
+android/app/*.jks
+android/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/build/
+*.apk
+*.aab
+
+# Windows / Desktop
+windows/flutter/ephemeral/
+*.exe
+*.dll
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,47 @@
+name: acorde
+description: "App pessoal para aprender espanhol argentino a partir de letras de musicas."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Local Database (Drift / SQLite)
+  drift: ^2.24.2
+  sqlite3_flutter_libs: ^0.5.28
+  path_provider: ^2.1.5
+  path: ^1.9.1
+
+  # Secure Storage (API Keys)
+  flutter_secure_storage: ^9.2.4
+
+  # Text-to-Speech
+  flutter_tts: ^4.2.2
+
+  # Typography & Styling
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.17
+
+  # HTTP Client for AI Gateway
+  dio: ^5.8.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.15
+  drift_dev: ^2.24.2
+  flutter_launcher_icons: ^0.14.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
