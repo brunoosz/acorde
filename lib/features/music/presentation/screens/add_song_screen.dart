@@ -54,7 +54,7 @@ class _AddSongScreenState extends ConsumerState<AddSongScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Cole o link de uma música do Spotify para preencher o título e artista automaticamente.',
+              'Cole o link de uma música ou playlist do Spotify.',
               style: AppTypography.bodySmall(color: AppColors.textMuted),
             ),
             const SizedBox(height: 16),
@@ -62,7 +62,7 @@ class _AddSongScreenState extends ConsumerState<AddSongScreen> {
               controller: urlController,
               style: AppTypography.bodyMedium(color: AppColors.textLight),
               decoration: InputDecoration(
-                hintText: 'https://open.spotify.com/track/...',
+                hintText: 'https://open.spotify.com/track/... ou /playlist/...',
                 hintStyle: AppTypography.bodySmall(color: AppColors.textMuted),
                 filled: true,
                 fillColor: AppColors.darkBackground,
@@ -100,7 +100,7 @@ class _AddSongScreenState extends ConsumerState<AddSongScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('URL inválida. Cole um link do Spotify (open.spotify.com/track/...).'),
+            content: Text('URL inválida. Cole um link do Spotify (track ou playlist).'),
             backgroundColor: AppColors.darkSurface,
           ),
         );
@@ -108,6 +108,13 @@ class _AddSongScreenState extends ConsumerState<AddSongScreen> {
       return;
     }
 
+    // Handle playlist URLs — show track picker
+    if (spotify.isPlaylistUrl(spotifyUrl)) {
+      await _importFromSpotifyPlaylist(spotifyUrl);
+      return;
+    }
+
+    // Handle single track URL
     final info = await spotify.getTrackInfo(spotifyUrl);
     if (info != null && mounted) {
       setState(() {
@@ -125,6 +132,108 @@ class _AddSongScreenState extends ConsumerState<AddSongScreen> {
         const SnackBar(
           content: Text('Não foi possível obter dados do Spotify. Verifique o link.'),
           backgroundColor: AppColors.celebrationAccent,
+        ),
+      );
+    }
+  }
+
+  Future<void> _importFromSpotifyPlaylist(String playlistUrl) async {
+    if (!mounted) return;
+
+    // Show loading dialog while fetching tracks
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(color: Color(0xFF1DB954)),
+            const SizedBox(height: 16),
+            Text('Carregando playlist...', style: AppTypography.bodyMedium(color: AppColors.textLight)),
+          ],
+        ),
+      ),
+    );
+
+    final spotify = ref.read(spotifyServiceProvider);
+    final tracks = await spotify.getPlaylistTracks(playlistUrl);
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // dismiss loading
+
+    if (tracks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Playlist vazia ou não foi possível carregar. Verifique as credenciais do Spotify nas Configurações.'),
+          backgroundColor: AppColors.celebrationAccent,
+        ),
+      );
+      return;
+    }
+
+    // Show track picker
+    final selected = await showModalBottomSheet<SpotifyTrackInfo>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.darkSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (ctx) => _PlaylistTrackPicker(tracks: tracks),
+    );
+
+    if (selected != null && mounted) {
+      setState(() {
+        _titleController.text = selected.title;
+        _artistController.text = selected.artist;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selecionado: ${selected.title} - ${selected.artist}. Agora cole a letra!'),
+          backgroundColor: AppColors.darkSurface,
+        ),
+      );
+    }
+  }
+
+  Future<void> _searchSpotify() async {
+    final spotify = ref.read(spotifyServiceProvider);
+    final isConfigured = await spotify.isConfigured;
+    if (!isConfigured) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Configure as credenciais do Spotify em Configurações para buscar músicas.'),
+            backgroundColor: AppColors.celebrationAccent,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    final selected = await showModalBottomSheet<SpotifyTrackInfo>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.darkSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (ctx) => _SpotifySearchSheet(spotify: spotify),
+    );
+
+    if (selected != null && mounted) {
+      setState(() {
+        _titleController.text = selected.title;
+        _artistController.text = selected.artist;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selecionado: ${selected.title} - ${selected.artist}. Agora cole a letra!'),
+          backgroundColor: AppColors.darkSurface,
         ),
       );
     }
@@ -371,28 +480,58 @@ Siempre hay un motivo para volver a empezar
                   const SizedBox(height: 16),
 
                   // Importar do Spotify
-                  GestureDetector(
-                    onTap: _importFromSpotify,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1DB954).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: const Color(0xFF1DB954), width: 1.5),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.link_rounded, color: Color(0xFF1DB954), size: 20),
-                          const SizedBox(width: 10),
-                          Text(
-                            'IMPORTAR DO SPOTIFY (LINK)',
-                            style: AppTypography.label(color: const Color(0xFF1DB954), fontWeight: FontWeight.w700),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _importFromSpotify,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1DB954).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(color: const Color(0xFF1DB954), width: 1.5),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.link_rounded, color: Color(0xFF1DB954), size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'LINK / PLAYLIST',
+                                  style: AppTypography.label(color: const Color(0xFF1DB954), fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _searchSpotify,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1DB954).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(color: const Color(0xFF1DB954), width: 1.5),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.search_rounded, color: Color(0xFF1DB954), size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'BUSCAR',
+                                  style: AppTypography.label(color: const Color(0xFF1DB954), fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
 
@@ -516,6 +655,311 @@ Siempre hay un motivo para volver a empezar
                 ],
               ),
             ),
+    );
+  }
+}
+
+class _PlaylistTrackPicker extends StatefulWidget {
+  final List<SpotifyTrackInfo> tracks;
+
+  const _PlaylistTrackPicker({required this.tracks});
+
+  @override
+  State<_PlaylistTrackPicker> createState() => _PlaylistTrackPickerState();
+}
+
+class _PlaylistTrackPickerState extends State<_PlaylistTrackPicker> {
+  String _search = '';
+
+  List<SpotifyTrackInfo> get _filtered {
+    if (_search.isEmpty) return widget.tracks;
+    final q = _search.toLowerCase();
+    return widget.tracks
+        .where((t) => t.title.toLowerCase().contains(q) || t.artist.toLowerCase().contains(q))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.75;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.textMuted,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Row(
+              children: [
+                const Icon(Icons.queue_music_rounded, color: Color(0xFF1DB954), size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  'PLAYLIST (${widget.tracks.length} músicas)',
+                  style: AppTypography.titleMedium(),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: TextField(
+              onChanged: (v) => setState(() => _search = v),
+              style: AppTypography.bodyMedium(color: AppColors.textLight),
+              decoration: InputDecoration(
+                hintText: 'Buscar na playlist...',
+                hintStyle: AppTypography.bodySmall(color: AppColors.textMuted),
+                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
+                filled: true,
+                fillColor: AppColors.darkBackground,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(100),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+              itemCount: _filtered.length,
+              itemBuilder: (ctx, i) {
+                final track = _filtered[i];
+                return ListTile(
+                  leading: track.thumbnailUrl != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            track.thumbnailUrl!,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: AppColors.darkBackground,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.music_note_rounded, color: AppColors.textMuted),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.darkBackground,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.music_note_rounded, color: AppColors.textMuted),
+                        ),
+                  title: Text(
+                    track.title,
+                    style: AppTypography.bodyMedium(color: AppColors.textLight),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    track.artist,
+                    style: AppTypography.bodySmall(color: AppColors.textMuted),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  onTap: () => Navigator.of(ctx).pop(track),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpotifySearchSheet extends StatefulWidget {
+  final SpotifyService spotify;
+
+  const _SpotifySearchSheet({required this.spotify});
+
+  @override
+  State<_SpotifySearchSheet> createState() => _SpotifySearchSheetState();
+}
+
+class _SpotifySearchSheetState extends State<_SpotifySearchSheet> {
+  final _controller = TextEditingController();
+  List<SpotifyTrackInfo> _results = [];
+  bool _loading = false;
+  bool _searched = false;
+
+  Future<void> _doSearch() async {
+    final query = _controller.text.trim();
+    if (query.isEmpty) return;
+    setState(() {
+      _loading = true;
+      _searched = true;
+    });
+    final results = await widget.spotify.searchTracks(query, limit: 20);
+    if (mounted) {
+      setState(() {
+        _results = results;
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.8;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.textMuted,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: Row(
+              children: [
+                const Icon(Icons.search_rounded, color: Color(0xFF1DB954), size: 22),
+                const SizedBox(width: 10),
+                Text('BUSCAR NO SPOTIFY', style: AppTypography.titleMedium()),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    onSubmitted: (_) => _doSearch(),
+                    textInputAction: TextInputAction.search,
+                    style: AppTypography.bodyMedium(color: AppColors.textLight),
+                    decoration: InputDecoration(
+                      hintText: 'Nome da música ou artista...',
+                      hintStyle: AppTypography.bodySmall(color: AppColors.textMuted),
+                      filled: true,
+                      fillColor: AppColors.darkBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(100),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _doSearch,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF1DB954),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.search_rounded, color: Colors.white, size: 22),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(color: Color(0xFF1DB954)),
+            )
+          else if (_results.isEmpty && _searched)
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(
+                'Nenhum resultado encontrado.',
+                style: AppTypography.bodyMedium(color: AppColors.textMuted),
+              ),
+            )
+          else
+            Flexible(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+                itemCount: _results.length,
+                itemBuilder: (ctx, i) {
+                  final track = _results[i];
+                  return ListTile(
+                    leading: track.thumbnailUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              track.thumbnailUrl!,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: AppColors.darkBackground,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.music_note_rounded, color: AppColors.textMuted),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.darkBackground,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.music_note_rounded, color: AppColors.textMuted),
+                          ),
+                    title: Text(
+                      track.title,
+                      style: AppTypography.bodyMedium(color: AppColors.textLight),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      track.artist,
+                      style: AppTypography.bodySmall(color: AppColors.textMuted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    onTap: () => Navigator.of(ctx).pop(track),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
