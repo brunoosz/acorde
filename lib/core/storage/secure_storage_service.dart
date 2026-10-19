@@ -33,6 +33,10 @@ class SecureStorageService {
 
   static const String _keyProvider = 'acorde_ai_selected_provider';
   static const String _keyPrivacyAccepted = 'acorde_privacy_accepted';
+  static const String _keySpotifyClientId = 'acorde_spotify_client_id';
+  static const String _keySpotifyClientSecret = 'acorde_spotify_client_secret';
+  static const String _keySpotifyAccessToken = 'acorde_spotify_access_token';
+  static const String _keySpotifyTokenExpiry = 'acorde_spotify_token_expiry';
 
   String _keyForApiKey(String providerId) => 'acorde_api_key_$providerId';
   String _keyForModel(String providerId) => 'acorde_model_$providerId';
@@ -77,6 +81,46 @@ class SecureStorageService {
 
   Future<void> setPrivacyNoticeAccepted(bool accepted) async {
     await _storage.write(key: _keyPrivacyAccepted, value: accepted.toString());
+  }
+
+  // Spotify Credentials
+  Future<String?> getSpotifyClientId() async {
+    return await _storage.read(key: _keySpotifyClientId);
+  }
+
+  Future<void> setSpotifyClientId(String clientId) async {
+    await _storage.write(key: _keySpotifyClientId, value: clientId.trim());
+  }
+
+  Future<String?> getSpotifyClientSecret() async {
+    return await _storage.read(key: _keySpotifyClientSecret);
+  }
+
+  Future<void> setSpotifyClientSecret(String clientSecret) async {
+    await _storage.write(key: _keySpotifyClientSecret, value: clientSecret.trim());
+  }
+
+  Future<String?> getSpotifyAccessToken() async {
+    final expiry = await _storage.read(key: _keySpotifyTokenExpiry);
+    if (expiry != null) {
+      final expiryTime = DateTime.tryParse(expiry);
+      if (expiryTime != null && expiryTime.isBefore(DateTime.now())) {
+        return null;
+      }
+    }
+    return await _storage.read(key: _keySpotifyAccessToken);
+  }
+
+  Future<void> setSpotifyAccessToken(String token, Duration expiresIn) async {
+    await _storage.write(key: _keySpotifyAccessToken, value: token);
+    final expiry = DateTime.now().add(expiresIn).toIso8601String();
+    await _storage.write(key: _keySpotifyTokenExpiry, value: expiry);
+  }
+
+  Future<bool> hasSpotifyCredentials() async {
+    final clientId = await getSpotifyClientId();
+    final clientSecret = await getSpotifyClientSecret();
+    return clientId != null && clientId.isNotEmpty && clientSecret != null && clientSecret.isNotEmpty;
   }
 
   // Apagar todas as chaves e credenciais seguras

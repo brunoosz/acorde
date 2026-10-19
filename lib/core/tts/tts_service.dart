@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 final ttsServiceProvider = Provider<TtsService>((ref) {
   final service = TtsService();
@@ -98,6 +100,28 @@ class TtsService {
 
   void setCompletionHandler(void Function() handler) {
     _flutterTts.setCompletionHandler(handler);
+  }
+
+  bool get hasSpanishVoice => _isInitialized && _activeLanguage.startsWith('es');
+
+  Future<void> openTtsSettings() async {
+    if (Platform.isAndroid) {
+      final uri = Uri.parse('com.android.settings.TTS_SETTINGS');
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        // Fallback: open general settings
+        final fallback = Uri.parse('package:com.android.settings');
+        try {
+          await launchUrl(fallback, mode: LaunchMode.externalApplication);
+        } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> reinitialize() async {
+    _isInitialized = false;
+    await initialize();
   }
 
   void dispose() {

@@ -34,6 +34,9 @@ dependencies:
   just_audio: ^0.9.43
   file_picker: ^8.1.7
 
+  # URL Launcher (TTS settings, OAuth)
+  url_launcher: ^6.3.1
+
   # HTTP Client for AI Gateway
   dio: ^5.8.0
 
