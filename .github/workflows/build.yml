@@ -38,6 +38,8 @@ jobs:
 
   build-windows:
     runs-on: windows-2022
+    env:
+      CMAKE_GENERATOR: Visual Studio 17 2022
     steps:
       - uses: actions/checkout@v4
 
@@ -51,9 +53,6 @@ jobs:
 
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Configure CMake generator
-        run: flutter config --cmake-generator="Visual Studio 17 2022"
 
       - name: Build Windows
         run: flutter build windows --release
