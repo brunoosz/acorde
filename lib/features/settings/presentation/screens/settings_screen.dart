@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/pill_button.dart';
 import '../../../../core/storage/secure_storage_service.dart';
+import '../../../../core/ai_gateway/ai_gateway_service.dart';
 import '../controllers/settings_controller.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -17,6 +18,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late final TextEditingController _apiKeyController;
   late final TextEditingController _modelController;
   bool _obscureApiKey = true;
+  bool _isTestingConnection = false;
+  String? _testResult;
+  bool _testSuccess = false;
 
   @override
   void initState() {
@@ -199,6 +203,96 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             );
                           },
                         ),
+                        const SizedBox(height: 12),
+
+                        // Botão Testar Conexão (Variante Outline 2px)
+                        PillButton(
+                          label: _isTestingConnection ? 'TESTANDO...' : 'TESTAR CONEXÃO (OLÁ IA)',
+                          variant: PillButtonVariant.outline,
+                          isExpanded: true,
+                          onPressed: _isTestingConnection
+                              ? null
+                              : () async {
+                                  // Salva antes de testar
+                                  await controller.saveModel(_modelController.text);
+                                  await controller.saveApiKey(_apiKeyController.text);
+
+                                  setState(() {
+                                    _isTestingConnection = true;
+                                    _testResult = null;
+                                  });
+
+                                  try {
+                                    final aiGateway = ref.read(aiGatewayServiceProvider);
+                                    final reply = await aiGateway.testConnection();
+                                    if (mounted) {
+                                      setState(() {
+                                        _testSuccess = true;
+                                        _testResult = reply;
+                                      });
+                                    }
+                                  } catch (e) {
+                                    if (mounted) {
+                                      setState(() {
+                                        _testSuccess = false;
+                                        _testResult = e.toString();
+                                      });
+                                    }
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() {
+                                        _isTestingConnection = false;
+                                      });
+                                    }
+                                  }
+                                },
+                        ),
+
+                        if (_testResult != null) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: _testSuccess
+                                  ? AppColors.iconSlang.withOpacity(0.15)
+                                  : AppColors.celebrationAccent.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: _testSuccess
+                                    ? AppColors.iconSlang
+                                    : AppColors.celebrationAccent,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _testSuccess ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                                      color: _testSuccess ? AppColors.iconSlang : AppColors.celebrationAccent,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _testSuccess ? 'CONEXÃO BEM-SUCEDIDA' : 'FALHA NA CONEXÃO',
+                                      style: AppTypography.label(
+                                        color: _testSuccess ? AppColors.iconSlang : AppColors.celebrationAccent,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _testResult!,
+                                  style: AppTypography.bodySmall(color: AppColors.textLight),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
