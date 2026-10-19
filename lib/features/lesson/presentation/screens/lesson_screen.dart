@@ -402,12 +402,12 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               Container(
                 padding: const EdgeInsets.only(top: 12),
                 decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0xFFE2DDD2))),
+                  border: Border(top: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.3))),
                 ),
                 child: Text(
                   block.translationPt,
                   style: AppTypography.bodyMedium(
-                    color: const Color(0xFF555555),
+                    color: AppColors.textMuted,
                   ),
                 ),
               ),

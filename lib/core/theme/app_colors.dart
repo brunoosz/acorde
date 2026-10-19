@@ -38,4 +38,7 @@ class AppColors {
   static const Color supportGrey = Color(0xFFEEEEEE);
   static const Color textMuted = Color(0xFF9E9E9E);
   static const Color borderSubtle = Color(0xFF333333);
+
+  // Terceiros
+  static const Color spotifyGreen = Color(0xFF1DB954);
 }

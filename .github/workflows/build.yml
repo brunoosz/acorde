@@ -1,0 +1,66 @@
+name: Build APK & Windows
+
+on:
+  push:
+    branches: [main, claude/*]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorde-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Create MSIX installer
+        run: dart run msix:create
+
+      - name: Upload Windows MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorde-windows-msix
+          path: build/windows/x64/runner/Release/*.msix
+
+      - name: Upload Windows portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: acorde-windows-portable
+          path: build/windows/x64/runner/Release/

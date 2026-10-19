@@ -69,7 +69,7 @@ class _AudioPlayerBarState extends State<AudioPlayerBar> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.darkSurface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(25),
           border: Border.all(color: AppColors.borderSubtle),
         ),
         child: Row(

@@ -82,7 +82,7 @@ class _AddSongScreenState extends ConsumerState<AddSongScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1DB954),
+              backgroundColor: AppColors.spotifyGreen,
               foregroundColor: Colors.white,
               shape: const StadiumBorder(),
             ),
@@ -488,9 +488,9 @@ Siempre hay un motivo para volver a empezar
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1DB954).withValues(alpha: 0.12),
+                              color: AppColors.spotifyGreen.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: const Color(0xFF1DB954), width: 1.5),
+                              border: Border.all(color: AppColors.spotifyGreen, width: 1.5),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -499,7 +499,7 @@ Siempre hay un motivo para volver a empezar
                                 const SizedBox(width: 8),
                                 Text(
                                   'LINK / PLAYLIST',
-                                  style: AppTypography.label(color: const Color(0xFF1DB954), fontWeight: FontWeight.w700),
+                                  style: AppTypography.label(color: AppColors.spotifyGreen, fontWeight: FontWeight.w700),
                                 ),
                               ],
                             ),
@@ -513,9 +513,9 @@ Siempre hay un motivo para volver a empezar
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1DB954).withValues(alpha: 0.12),
+                              color: AppColors.spotifyGreen.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(100),
-                              border: Border.all(color: const Color(0xFF1DB954), width: 1.5),
+                              border: Border.all(color: AppColors.spotifyGreen, width: 1.5),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -524,7 +524,7 @@ Siempre hay un motivo para volver a empezar
                                 const SizedBox(width: 8),
                                 Text(
                                   'BUSCAR',
-                                  style: AppTypography.label(color: const Color(0xFF1DB954), fontWeight: FontWeight.w700),
+                                  style: AppTypography.label(color: AppColors.spotifyGreen, fontWeight: FontWeight.w700),
                                 ),
                               ],
                             ),

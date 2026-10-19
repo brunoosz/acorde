@@ -330,7 +330,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       color: AppColors.darkSurface,
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
-                        color: _spotifyConfigured ? const Color(0xFF1DB954) : AppColors.borderSubtle,
+                        color: _spotifyConfigured ? AppColors.spotifyGreen : AppColors.borderSubtle,
                         width: 1.5,
                       ),
                     ),
@@ -341,13 +341,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           children: [
                             Icon(
                               Icons.music_note_rounded,
-                              color: _spotifyConfigured ? const Color(0xFF1DB954) : AppColors.textMuted,
+                              color: _spotifyConfigured ? AppColors.spotifyGreen : AppColors.textMuted,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'SPOTIFY',
                               style: AppTypography.label(
-                                color: _spotifyConfigured ? const Color(0xFF1DB954) : AppColors.textMuted,
+                                color: _spotifyConfigured ? AppColors.spotifyGreen : AppColors.textMuted,
                               ),
                             ),
                             const Spacer(),
@@ -355,12 +355,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1DB954).withValues(alpha: 0.15),
+                                  color: AppColors.spotifyGreen.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(100),
                                 ),
                                 child: Text(
                                   'CONECTADO',
-                                  style: AppTypography.label(color: const Color(0xFF1DB954), fontWeight: FontWeight.w700),
+                                  style: AppTypography.label(color: AppColors.spotifyGreen, fontWeight: FontWeight.w700),
                                 ),
                               ),
                           ],
