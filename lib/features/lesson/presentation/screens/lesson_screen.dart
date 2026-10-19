@@ -401,7 +401,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.only(top: 12),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(top: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.3))),
                 ),
                 child: Text(
