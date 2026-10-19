@@ -5,6 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/pill_button.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/ai_gateway/ai_gateway_service.dart';
+import '../../../onboarding/presentation/screens/profile_screen.dart';
 import '../controllers/settings_controller.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -293,6 +294,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           ),
                         ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Perfil do Estudante
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.darkSurface,
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(color: AppColors.borderSubtle),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('PERFIL DE APRENDIZADO', style: AppTypography.label(color: AppColors.textMuted)),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Respostas do questionário que guiam a IA na montagem das aulas.',
+                          style: AppTypography.bodySmall(color: AppColors.textLight),
+                        ),
+                        const SizedBox(height: 16),
+                        PillButton(
+                          label: 'VER MEU PERFIL',
+                          variant: PillButtonVariant.outline,
+                          isExpanded: true,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
