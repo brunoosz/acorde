@@ -47,12 +47,23 @@ dev_dependencies:
   build_runner: ^2.4.15
   drift_dev: ^2.24.2
   flutter_launcher_icons: ^0.14.3
+  msix: ^3.16.8
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: false
   image_path: "assets/icons/acorde-icon-1024.png"
   min_sdk_android: 24
+
+msix_config:
+  display_name: Acorde
+  publisher_display_name: Bruno Camperlingo
+  identity_name: com.acorde.app
+  msix_version: 0.1.0.0
+  logo_path: assets/icons/acorde-icon-1024.png
+  capabilities: internetClient
+  languages: pt-BR, es-AR, en-US
+  install_certificate: false
 
 flutter:
   uses-material-design: true
