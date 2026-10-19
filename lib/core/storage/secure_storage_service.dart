@@ -1,4 +1,9 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
+  return const SecureStorageService();
+});
 
 enum AiProviderType {
   groq('groq', 'Groq', 'https://api.groq.com/openai/v1', 'llama-3.3-70b-versatile'),

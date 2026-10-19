@@ -42,9 +42,6 @@ class SettingsState {
   }
 }
 
-final secureStorageServiceProvider = Provider<SecureStorageService>((ref) {
-  return const SecureStorageService();
-});
 
 final settingsControllerProvider =
     StateNotifierProvider<SettingsController, SettingsState>((ref) {

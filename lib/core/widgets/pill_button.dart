@@ -55,7 +55,7 @@ class PillButton extends StatelessWidget {
       elevation: 0,
       shadowColor: Colors.transparent,
       padding: padding,
-      shape: const StadiumBorder(
+      shape: StadiumBorder(
         side: BorderSide(
           color: isPrimary ? Colors.transparent : AppColors.textLight,
           width: 2.0,

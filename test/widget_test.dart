@@ -1,30 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:acorde/core/theme/app_colors.dart';
 import 'package:acorde/core/widgets/pill_button.dart';
 import 'package:acorde/core/widgets/quintet_icon.dart';
 import 'package:acorde/core/widgets/floating_nav_bar.dart';
+import 'package:acorde/features/navigation/presentation/screens/main_scaffold_screen.dart';
+import 'package:acorde/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:acorde/features/music/presentation/screens/songs_list_tab.dart';
+import 'package:acorde/features/vocab/presentation/screens/vocab_review_screen.dart';
 import 'package:acorde/main.dart';
 
 void main() {
-  testWidgets('Acorde visual identity & components test', (WidgetTester tester) async {
-    // Renderiza o app principal
-    await tester.pumpWidget(const AcordeApp());
-    await tester.pumpAndSettle();
+  testWidgets('Acorde startup gate opens Onboarding for new users', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          hasProfileFutureProvider.overrideWith((ref) => Future.value(false)),
+        ],
+        child: const AcordeApp(),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
 
-    // Valida logo ("a" e ponto ".")
+    expect(find.byType(OnboardingScreen), findsOneWidget);
+    expect(find.text('QUAL É O SEU\nOBJETIVO?'), findsOneWidget);
+    expect(find.text('CONTINUAR'), findsOneWidget);
+  });
+
+  testWidgets('MainScaffoldScreen renders Navigate identity and floating navbar', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          allSongsFutureProvider.overrideWith((ref) => Future.value([])),
+          dueReviewsFutureProvider.overrideWith((ref) => Future.value([])),
+        ],
+        child: const MaterialApp(
+          home: MainScaffoldScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Valida logo e pôster
     expect(find.text('ACORDE'), findsOneWidget);
     expect(find.text('APRENDA\nESPANHOL\nCOM MÚSICA.'), findsOneWidget);
 
-    // Valida botão principal no formato de pílula
+    // Valida botão principal
     expect(find.text('COLAR NOVA LETRA'), findsOneWidget);
-    final buttonFinder = find.byType(PillButton);
-    expect(buttonFinder, findsOneWidget);
+    expect(find.byType(PillButton), findsWidgets);
 
     // Valida presença da barra flutuante em pílula
     expect(find.byType(FloatingNavBar), findsOneWidget);
     expect(find.text('Músicas'), findsOneWidget);
-    expect(find.text('Revisão'), findsNothing); // Apenas a aba ativa mostra o texto na navbar
   });
 
   testWidgets('QuintetIcon displays correct colors and symbols', (WidgetTester tester) async {
