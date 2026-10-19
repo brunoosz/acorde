@@ -6,6 +6,7 @@ import '../../../../core/widgets/pill_button.dart';
 import '../../../../core/widgets/quintet_icon.dart';
 import '../../../../core/widgets/lesson_icon_row.dart';
 import '../../../../core/tts/tts_service.dart';
+import '../../../../core/widgets/audio_player_bar.dart';
 import '../../../../core/database/database_provider.dart';
 import '../../../music/domain/models/song.dart';
 import '../../../music/data/repositories/music_repository.dart';
@@ -221,6 +222,16 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Player de áudio (se disponível)
+                      if (widget.song.audioPath != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: AudioPlayerBar(
+                            audioPath: widget.song.audioPath!,
+                            songTitle: widget.song.title,
+                          ),
+                        ),
+
                       // Fileira com os 5 ícones no topo
                       LessonIconRow(
                         activeType: _selectedFilter,

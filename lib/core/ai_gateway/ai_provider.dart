@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 /// Interface única do AI Gateway para desacoplar o aplicativo dos detalhes do provedor.
 abstract class AiProvider {
   String get name;

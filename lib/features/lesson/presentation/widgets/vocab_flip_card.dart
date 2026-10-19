@@ -140,7 +140,7 @@ class _VocabFlipCardState extends State<VocabFlipCard> with SingleTickerProvider
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.iconVocab.withOpacity(0.18),
+        color: AppColors.iconVocab.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(25),
         border: Border.all(color: AppColors.iconVocab, width: 2),
       ),

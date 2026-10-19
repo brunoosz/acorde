@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/pill_button.dart';
@@ -36,53 +40,44 @@ class SongsListTab extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Logo Acorde: "a" minúsculo em creme com ponto laranja sobre fundo escuro
+              // Logo compacto
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   RichText(
                     text: TextSpan(
                       text: 'a',
-                      style: AppTypography.titleHuge(color: AppColors.textLight).copyWith(
-                        fontSize: 54,
-                      ),
+                      style: AppTypography.titleHuge(color: AppColors.textLight).copyWith(fontSize: 48),
                       children: [
                         TextSpan(
                           text: '.',
-                          style: AppTypography.titleHuge(color: AppColors.celebrationAccent).copyWith(
-                            fontSize: 54,
-                          ),
+                          style: AppTypography.titleHuge(color: AppColors.celebrationAccent).copyWith(fontSize: 48),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Text(
                     'ACORDE',
-                    style: AppTypography.label(
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTypography.label(color: AppColors.textMuted, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
-              // Título pôster Navigate
-              Text(
-                'APRENDA\nESPANHOL\nCOM MÚSICA.',
-                style: AppTypography.titleHuge(),
-              ),
+              // Título principal
+              Text('APRENDA\nESPANHOL\nCOM MÚSICA.', style: AppTypography.titleHuge()),
               const SizedBox(height: 12),
               Text(
-                'Espanhol rioplatense (Argentina) analisado estrofe por estrofe.',
+                'Espanhol rioplatense (Argentina) analisado estrofe por estrofe pela IA.',
                 style: AppTypography.bodyMedium(color: AppColors.supportPurple),
               ),
               const SizedBox(height: 28),
 
-              // Botão de ação (cor única autorizada #c7ff69)
+              // Botão principal
               PillButton(
                 label: 'COLAR NOVA LETRA',
-                icon: const Icon(Icons.add, color: AppColors.actionText),
+                icon: const Icon(Icons.add_rounded, color: AppColors.actionText),
                 isExpanded: true,
                 onPressed: () async {
                   final added = await Navigator.of(context).push<bool>(
@@ -95,60 +90,69 @@ class SongsListTab extends ConsumerWidget {
               ),
               const SizedBox(height: 36),
 
-              // Os 5 pilares fixos
-              Text(
-                'OS 5 PILARES DE CADA AULA',
-                style: AppTypography.label(color: AppColors.textMuted),
-              ),
+              // 5 pilares
+              Text('OS 5 PILARES DE CADA AULA', style: AppTypography.label(color: AppColors.textMuted)),
               const SizedBox(height: 16),
               const LessonIconRow(),
               const SizedBox(height: 36),
 
-              // Lista de músicas salvas
-              Text(
-                'MINHAS MÚSICAS',
-                style: AppTypography.label(color: AppColors.textMuted),
-              ),
+              // Lista de músicas
+              Text('MINHAS MÚSICAS', style: AppTypography.label(color: AppColors.textMuted)),
               const SizedBox(height: 16),
 
               songsAsync.when(
                 loading: () => const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24.0),
+                    padding: EdgeInsets.all(32),
                     child: CircularProgressIndicator(color: AppColors.actionGreen),
                   ),
                 ),
-                error: (err, _) => Text('Erro ao listar músicas: $err'),
+                error: (err, _) => Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.darkSurface,
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: AppColors.celebrationAccent, size: 32),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Erro ao carregar músicas',
+                        style: AppTypography.bodyMedium(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$err',
+                        style: AppTypography.bodySmall(color: AppColors.textMuted),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
                 data: (songs) {
                   if (songs.isEmpty) {
                     return Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                       decoration: BoxDecoration(
                         color: AppColors.darkSurface,
                         borderRadius: BorderRadius.circular(25),
                       ),
-                      child: Row(
+                      child: Column(
                         children: [
-                          const QuintetIcon(type: QuintetType.music, size: 40),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'NENHUMA MÚSICA AINDA',
-                                  style: AppTypography.bodyMedium(
-                                    color: AppColors.textLight,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                Text(
-                                  'Cole uma letra de tango, rock nacional ou trap argentino.',
-                                  style: AppTypography.bodySmall(color: AppColors.textMuted),
-                                ),
-                              ],
-                            ),
+                          const QuintetIcon(type: QuintetType.music, size: 56),
+                          const SizedBox(height: 16),
+                          Text(
+                            'NENHUMA MÚSICA AINDA',
+                            style: AppTypography.label(color: AppColors.textLight),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Cole uma letra de tango, rock nacional ou trap argentino para começar.',
+                            style: AppTypography.bodySmall(color: AppColors.textMuted),
+                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
@@ -165,11 +169,8 @@ class SongsListTab extends ConsumerWidget {
                         curve: Curves.easeOutCubic,
                         builder: (context, value, child) {
                           return Transform.translate(
-                            offset: Offset(0, 15 * (1 - value)),
-                            child: Opacity(
-                              opacity: value,
-                              child: child,
-                            ),
+                            offset: Offset(0, 12 * (1 - value)),
+                            child: Opacity(opacity: value, child: child),
                           );
                         },
                         child: _SongCard(song: song),
@@ -209,7 +210,10 @@ class _SongCard extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppColors.darkSurface,
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: AppColors.borderSubtle, width: 1.5),
+            border: Border.all(
+              color: isCompleted ? AppColors.iconSlang.withValues(alpha: 0.4) : AppColors.borderSubtle,
+              width: 1.5,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -226,15 +230,20 @@ class _SongCard extends ConsumerWidget {
                         Text(
                           song.title,
                           style: AppTypography.bodyLarge(fontWeight: FontWeight.w900),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           song.artist,
                           style: AppTypography.bodySmall(color: AppColors.textMuted),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
@@ -242,7 +251,7 @@ class _SongCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(
-                      isCompleted ? 'CONCLUÍDO' : 'DIA $currentDay DE $totalDays',
+                      isCompleted ? 'CONCLUÍDO' : 'DIA $currentDay/$totalDays',
                       style: AppTypography.label(
                         color: AppColors.actionText,
                         fontWeight: FontWeight.w700,
@@ -253,20 +262,71 @@ class _SongCard extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
 
-              // Botão Continuar Aula
-              PillButton(
-                label: isCompleted ? 'REVER AULA' : 'CONTINUAR DIA $currentDay',
-                isExpanded: true,
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => LessonScreen(
-                        song: song,
-                        lessonPlan: plan,
+              // Barra de progresso visual
+              ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: LinearProgressIndicator(
+                  value: isCompleted ? 1.0 : (currentDay - 1) / totalDays,
+                  minHeight: 4,
+                  backgroundColor: AppColors.darkBackground,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isCompleted ? AppColors.iconSlang : AppColors.actionGreen,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  // Botão de áudio
+                  GestureDetector(
+                    onTap: () async {
+                      if (song.audioPath != null) return;
+                      final result = await FilePicker.platform.pickFiles(type: FileType.audio);
+                      if (result != null && result.files.single.path != null) {
+                        final appDir = await getApplicationDocumentsDirectory();
+                        final audioDir = Directory(p.join(appDir.path, 'audio'));
+                        if (!await audioDir.exists()) await audioDir.create(recursive: true);
+                        final ext = p.extension(result.files.single.path!);
+                        final dest = p.join(audioDir.path, '${DateTime.now().millisecondsSinceEpoch}$ext');
+                        await File(result.files.single.path!).copy(dest);
+                        await repo.updateSongAudio(song.id, dest);
+                        ref.invalidate(allSongsFutureProvider);
+                      }
+                    },
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: song.audioPath != null ? AppColors.iconMusic.withValues(alpha: 0.15) : AppColors.darkBackground,
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(
+                          color: song.audioPath != null ? AppColors.iconMusic : AppColors.borderSubtle,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Icon(
+                        song.audioPath != null ? Icons.audiotrack_rounded : Icons.add_rounded,
+                        color: song.audioPath != null ? AppColors.iconMusic : AppColors.textMuted,
+                        size: 22,
                       ),
                     ),
-                  );
-                },
+                  ),
+                  Expanded(
+                    child: PillButton(
+                      label: isCompleted ? 'REVER AULA' : 'CONTINUAR DIA $currentDay',
+                      isExpanded: true,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => LessonScreen(song: song, lessonPlan: plan),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

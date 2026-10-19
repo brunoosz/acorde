@@ -23,15 +23,17 @@ class MusicRepository {
     required int totalDays,
     required String planJson,
     required List<Map<String, dynamic>> sections,
+    String? audioPath,
   }) async {
     return _db.transaction(() async {
       // 1. Inserir música
       final songResult = await _db.customInsert(
-        'INSERT INTO songs_table (title, artist, full_lyrics, created_at) VALUES (?, ?, ?, ?)',
+        'INSERT INTO songs_table (title, artist, full_lyrics, audio_path, created_at) VALUES (?, ?, ?, ?, ?)',
         variables: [
           Variable.withString(title),
           Variable.withString(artist),
           Variable.withString(fullLyrics),
+          audioPath != null ? Variable.withString(audioPath) : const Variable(null),
           Variable.withString(DateTime.now().toIso8601String()),
         ],
       );
@@ -72,7 +74,7 @@ class MusicRepository {
   /// Lista todas as músicas cadastradas
   Future<List<Song>> getAllSongs() async {
     final rows = await _db.customSelect(
-      'SELECT id, title, artist, full_lyrics, created_at FROM songs_table ORDER BY id DESC',
+      'SELECT id, title, artist, full_lyrics, audio_path, created_at FROM songs_table ORDER BY id DESC',
     ).get();
 
     return rows.map((row) {
@@ -81,6 +83,7 @@ class MusicRepository {
         title: row.read<String>('title'),
         artist: row.read<String>('artist'),
         fullLyrics: row.read<String>('full_lyrics'),
+        audioPath: row.readNullable<String>('audio_path'),
         createdAt: DateTime.tryParse(row.read<String>('created_at')) ?? DateTime.now(),
       );
     }).toList();
@@ -89,7 +92,7 @@ class MusicRepository {
   /// Busca os detalhes de uma música pelo ID
   Future<Song?> getSong(int id) async {
     final row = await _db.customSelect(
-      'SELECT id, title, artist, full_lyrics, created_at FROM songs_table WHERE id = ? LIMIT 1',
+      'SELECT id, title, artist, full_lyrics, audio_path, created_at FROM songs_table WHERE id = ? LIMIT 1',
       variables: [Variable.withInt(id)],
     ).getSingleOrNull();
 
@@ -100,6 +103,7 @@ class MusicRepository {
       title: row.read<String>('title'),
       artist: row.read<String>('artist'),
       fullLyrics: row.read<String>('full_lyrics'),
+      audioPath: row.readNullable<String>('audio_path'),
       createdAt: DateTime.tryParse(row.read<String>('created_at')) ?? DateTime.now(),
     );
   }
@@ -139,6 +143,17 @@ class MusicRepository {
         textContent: row.read<String>('text_content'),
       );
     }).toList();
+  }
+
+  /// Atualiza o caminho do áudio de uma música
+  Future<void> updateSongAudio(int songId, String? audioPath) async {
+    await _db.customUpdate(
+      'UPDATE songs_table SET audio_path = ? WHERE id = ?',
+      variables: [
+        audioPath != null ? Variable.withString(audioPath) : const Variable(null),
+        Variable.withInt(songId),
+      ],
+    );
   }
 
   /// Atualiza o progresso do dia atual

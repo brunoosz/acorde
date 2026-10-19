@@ -255,9 +255,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: _testSuccess
-                                  ? AppColors.iconSlang.withOpacity(0.15)
-                                  : AppColors.celebrationAccent.withOpacity(0.15),
+                              color: Color.alphaBlend(
+                                (_testSuccess ? AppColors.iconSlang : AppColors.celebrationAccent).withValues(alpha: 0.15),
+                                AppColors.darkSurface,
+                              ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: _testSuccess

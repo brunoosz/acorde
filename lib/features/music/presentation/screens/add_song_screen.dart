@@ -1,5 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/pill_button.dart';
@@ -9,6 +15,7 @@ import '../../../onboarding/data/repositories/profile_repository.dart';
 import '../../../onboarding/domain/models/user_profile.dart';
 import '../../../lesson/data/services/lesson_ai_service.dart';
 import '../../data/repositories/music_repository.dart';
+import '../../data/services/spotify_service.dart';
 
 class AddSongScreen extends ConsumerStatefulWidget {
   const AddSongScreen({super.key});
@@ -24,6 +31,8 @@ class _AddSongScreenState extends ConsumerState<AddSongScreen> {
 
   bool _isLoading = false;
   String? _statusText;
+  String? _selectedAudioPath;
+  String? _selectedAudioName;
 
   @override
   void dispose() {
@@ -33,7 +42,119 @@ class _AddSongScreenState extends ConsumerState<AddSongScreen> {
     super.dispose();
   }
 
-  // Exemplo de preenchimento rápido para testar
+  Future<void> _importFromSpotify() async {
+    final urlController = TextEditingController();
+    final spotifyUrl = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        title: Text('IMPORTAR DO SPOTIFY', style: AppTypography.titleMedium()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Cole o link de uma música do Spotify para preencher o título e artista automaticamente.',
+              style: AppTypography.bodySmall(color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: urlController,
+              style: AppTypography.bodyMedium(color: AppColors.textLight),
+              decoration: InputDecoration(
+                hintText: 'https://open.spotify.com/track/...',
+                hintStyle: AppTypography.bodySmall(color: AppColors.textMuted),
+                filled: true,
+                fillColor: AppColors.darkBackground,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.all(16),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('CANCELAR', style: AppTypography.label(color: AppColors.textMuted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1DB954),
+              foregroundColor: Colors.white,
+              shape: const StadiumBorder(),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(urlController.text.trim()),
+            child: Text('IMPORTAR', style: AppTypography.button(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (spotifyUrl == null || spotifyUrl.isEmpty) return;
+
+    final spotify = ref.read(spotifyServiceProvider);
+    if (!spotify.isSpotifyUrl(spotifyUrl)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('URL inválida. Cole um link do Spotify (open.spotify.com/track/...).'),
+            backgroundColor: AppColors.darkSurface,
+          ),
+        );
+      }
+      return;
+    }
+
+    final info = await spotify.getTrackInfo(spotifyUrl);
+    if (info != null && mounted) {
+      setState(() {
+        _titleController.text = info.title;
+        _artistController.text = info.artist;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Importado: ${info.title} - ${info.artist}. Agora cole a letra!'),
+          backgroundColor: AppColors.darkSurface,
+        ),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível obter dados do Spotify. Verifique o link.'),
+          backgroundColor: AppColors.celebrationAccent,
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickAudioFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+      allowMultiple: false,
+    );
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _selectedAudioPath = result.files.single.path;
+        _selectedAudioName = result.files.single.name;
+      });
+    }
+  }
+
+  Future<String?> _copyAudioToAppDir(String sourcePath) async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final audioDir = Directory(p.join(appDir.path, 'audio'));
+    if (!await audioDir.exists()) {
+      await audioDir.create(recursive: true);
+    }
+    final ext = p.extension(sourcePath);
+    final destPath = p.join(audioDir.path, '${DateTime.now().millisecondsSinceEpoch}$ext');
+    await File(sourcePath).copy(destPath);
+    return destPath;
+  }
+
   void _fillSampleSong() {
     _titleController.text = 'Seminare';
     _artistController.text = 'Serú Girán (Charly García)';
@@ -109,7 +230,16 @@ Siempre hay un motivo para volver a empezar
               .toList() ??
           [];
 
-      // 4. Salvar no SQLite local
+      // 4. Copiar áudio para diretório do app (se selecionado)
+      String? savedAudioPath;
+      if (_selectedAudioPath != null) {
+        setState(() {
+          _statusText = 'Salvando arquivo de áudio...';
+        });
+        savedAudioPath = await _copyAudioToAppDir(_selectedAudioPath!);
+      }
+
+      // 5. Salvar no SQLite local
       setState(() {
         _statusText = 'Salvando música e cronograma de dias...';
       });
@@ -120,8 +250,9 @@ Siempre hay un motivo para volver a empezar
         artist: artist,
         fullLyrics: lyrics,
         totalDays: totalDays,
-        planJson: planData.toString(),
+        planJson: jsonEncode(planData),
         sections: sections,
+        audioPath: savedAudioPath,
       );
 
       if (mounted) {
@@ -195,10 +326,11 @@ Siempre hay un motivo para volver a empezar
         title: Text('NOVA MÚSICA', style: AppTypography.titleMedium()),
         backgroundColor: AppColors.darkBackground,
         actions: [
-          TextButton(
-            onPressed: _fillSampleSong,
-            child: Text('Exemplo', style: AppTypography.label(color: AppColors.actionGreen)),
-          ),
+          if (kDebugMode)
+            TextButton(
+              onPressed: _fillSampleSong,
+              child: Text('Exemplo', style: AppTypography.label(color: AppColors.actionGreen)),
+            ),
         ],
       ),
       body: _isLoading
@@ -235,6 +367,32 @@ Siempre hay un motivo para volver a empezar
                   Text(
                     'A IA dividirá a música em dias conforme o seu tempo diário disponível.',
                     style: AppTypography.bodySmall(color: AppColors.textMuted),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Importar do Spotify
+                  GestureDetector(
+                    onTap: _importFromSpotify,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1DB954).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(100),
+                        border: Border.all(color: const Color(0xFF1DB954), width: 1.5),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.link_rounded, color: Color(0xFF1DB954), size: 20),
+                          const SizedBox(width: 10),
+                          Text(
+                            'IMPORTAR DO SPOTIFY (LINK)',
+                            style: AppTypography.label(color: const Color(0xFF1DB954), fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -295,6 +453,55 @@ Siempre hay un motivo para volver a empezar
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.all(20),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Áudio da música (opcional)
+                  Text('ÁUDIO DA MÚSICA (OPCIONAL)', style: AppTypography.label(color: AppColors.textMuted)),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: _pickAudioFile,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.darkSurface,
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: _selectedAudioName != null ? AppColors.actionGreen : AppColors.borderSubtle,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _selectedAudioName != null ? Icons.audiotrack_rounded : Icons.upload_file_rounded,
+                            color: _selectedAudioName != null ? AppColors.actionGreen : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _selectedAudioName ?? 'Toque para selecionar um arquivo de áudio',
+                              style: AppTypography.bodyMedium(
+                                color: _selectedAudioName != null ? AppColors.textLight : AppColors.textMuted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_selectedAudioName != null)
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedAudioPath = null;
+                                  _selectedAudioName = null;
+                                });
+                              },
+                              child: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 20),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 28),
