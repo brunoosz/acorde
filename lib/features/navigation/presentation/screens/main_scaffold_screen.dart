@@ -5,6 +5,7 @@ import '../../../../core/widgets/floating_nav_bar.dart';
 import '../../../../core/widgets/pill_button.dart';
 import '../../../../core/widgets/quintet_icon.dart';
 import '../../../../core/widgets/lesson_icon_row.dart';
+import '../../../settings/presentation/screens/settings_screen.dart';
 
 class MainScaffoldScreen extends StatefulWidget {
   const MainScaffoldScreen({super.key});
@@ -33,7 +34,7 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
             children: const [
               _SongsPreviewTab(),
               _VocabPreviewTab(),
-              _SettingsPreviewTab(),
+              SettingsScreen(),
             ],
           ),
           Positioned(
@@ -231,61 +232,3 @@ class _VocabPreviewTab extends StatelessWidget {
 }
 
 /// Aba 3: Prévia de Configurações
-class _SettingsPreviewTab extends StatelessWidget {
-  const _SettingsPreviewTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'AJUSTES',
-              style: AppTypography.titleLarge(),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Provedores de IA, chaves de API e privacidade.',
-              style: AppTypography.bodyMedium(color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 32),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.darkSurface,
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'PROVEDOR IA',
-                    style: AppTypography.label(color: AppColors.textMuted),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Groq (Padrão)',
-                    style: AppTypography.bodyLarge(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 16),
-                  PillButton(
-                    label: 'CONFIGURAR CHAVES',
-                    variant: PillButtonVariant.outline,
-                    onPressed: () {
-                      // Será expandido na Etapa 3
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
