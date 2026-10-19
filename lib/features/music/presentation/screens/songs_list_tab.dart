@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../../../../core/theme/app_colors.dart';
@@ -278,40 +279,10 @@ class _SongCard extends ConsumerWidget {
 
               Row(
                 children: [
-                  // Botão de áudio
-                  GestureDetector(
-                    onTap: () async {
-                      if (song.audioPath != null) return;
-                      final result = await FilePicker.platform.pickFiles(type: FileType.audio);
-                      if (result != null && result.files.single.path != null) {
-                        final appDir = await getApplicationDocumentsDirectory();
-                        final audioDir = Directory(p.join(appDir.path, 'audio'));
-                        if (!await audioDir.exists()) await audioDir.create(recursive: true);
-                        final ext = p.extension(result.files.single.path!);
-                        final dest = p.join(audioDir.path, '${DateTime.now().millisecondsSinceEpoch}$ext');
-                        await File(result.files.single.path!).copy(dest);
-                        await repo.updateSongAudio(song.id, dest);
-                        ref.invalidate(allSongsFutureProvider);
-                      }
-                    },
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      margin: const EdgeInsets.only(right: 12),
-                      decoration: BoxDecoration(
-                        color: song.audioPath != null ? AppColors.iconMusic.withValues(alpha: 0.15) : AppColors.darkBackground,
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(
-                          color: song.audioPath != null ? AppColors.iconMusic : AppColors.borderSubtle,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Icon(
-                        song.audioPath != null ? Icons.audiotrack_rounded : Icons.add_rounded,
-                        color: song.audioPath != null ? AppColors.iconMusic : AppColors.textMuted,
-                        size: 22,
-                      ),
-                    ),
+                  _AudioButton(
+                    song: song,
+                    repo: repo,
+                    onAudioAttached: () => ref.invalidate(allSongsFutureProvider),
                   ),
                   Expanded(
                     child: PillButton(
@@ -332,6 +303,110 @@ class _SongCard extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _AudioButton extends StatefulWidget {
+  final Song song;
+  final MusicRepository repo;
+  final VoidCallback onAudioAttached;
+
+  const _AudioButton({
+    required this.song,
+    required this.repo,
+    required this.onAudioAttached,
+  });
+
+  @override
+  State<_AudioButton> createState() => _AudioButtonState();
+}
+
+class _AudioButtonState extends State<_AudioButton> {
+  AudioPlayer? _player;
+  bool _isPlaying = false;
+
+  @override
+  void dispose() {
+    _player?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _togglePlayback() async {
+    final path = widget.song.audioPath;
+    if (path == null) return;
+
+    if (_player == null) {
+      _player = AudioPlayer();
+      _player!.playerStateStream.listen((state) {
+        if (!mounted) return;
+        final playing = state.playing && state.processingState != ProcessingState.completed;
+        if (_isPlaying != playing) {
+          setState(() => _isPlaying = playing);
+        }
+        if (state.processingState == ProcessingState.completed) {
+          _player!.seek(Duration.zero);
+          _player!.pause();
+        }
+      });
+    }
+
+    if (_isPlaying) {
+      await _player!.pause();
+    } else {
+      final file = File(path);
+      if (!await file.exists()) return;
+      if (_player!.processingState == ProcessingState.idle ||
+          _player!.processingState == ProcessingState.completed) {
+        await _player!.setFilePath(path);
+      }
+      await _player!.play();
+    }
+  }
+
+  Future<void> _attachAudio() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.audio);
+    if (result != null && result.files.single.path != null) {
+      final appDir = await getApplicationDocumentsDirectory();
+      final audioDir = Directory(p.join(appDir.path, 'audio'));
+      if (!await audioDir.exists()) await audioDir.create(recursive: true);
+      final ext = p.extension(result.files.single.path!);
+      final dest = p.join(audioDir.path, '${DateTime.now().millisecondsSinceEpoch}$ext');
+      await File(result.files.single.path!).copy(dest);
+      await widget.repo.updateSongAudio(widget.song.id, dest);
+      widget.onAudioAttached();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasAudio = widget.song.audioPath != null;
+
+    return GestureDetector(
+      onTap: hasAudio ? _togglePlayback : _attachAudio,
+      onLongPress: hasAudio ? _attachAudio : null,
+      child: Container(
+        width: 48,
+        height: 48,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: hasAudio
+              ? (_isPlaying ? AppColors.iconMusic.withValues(alpha: 0.3) : AppColors.iconMusic.withValues(alpha: 0.15))
+              : AppColors.darkBackground,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: hasAudio ? AppColors.iconMusic : AppColors.borderSubtle,
+            width: 1.5,
+          ),
+        ),
+        child: Icon(
+          hasAudio
+              ? (_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded)
+              : Icons.add_rounded,
+          color: hasAudio ? AppColors.iconMusic : AppColors.textMuted,
+          size: 22,
+        ),
+      ),
     );
   }
 }
