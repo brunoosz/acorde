@@ -156,7 +156,25 @@ class SongsListTab extends ConsumerWidget {
                   }
 
                   return Column(
-                    children: songs.map((song) => _SongCard(song: song)).toList(),
+                    children: songs.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final song = entry.value;
+                      return TweenAnimationBuilder<double>(
+                        duration: Duration(milliseconds: 200 + (index * 60).clamp(0, 300)),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Transform.translate(
+                            offset: Offset(0, 15 * (1 - value)),
+                            child: Opacity(
+                              opacity: value,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: _SongCard(song: song),
+                      );
+                    }).toList(),
                   );
                 },
               ),

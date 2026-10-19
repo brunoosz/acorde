@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'features/navigation/presentation/screens/main_scaffold_screen.dart';
 import 'features/onboarding/data/repositories/profile_repository.dart';
 import 'features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'features/splash/presentation/screens/splash_screen.dart';
 
 final hasProfileFutureProvider = FutureProvider<bool>((ref) async {
   final repo = ref.watch(profileRepositoryProvider);
@@ -29,7 +30,7 @@ class AcordeApp extends StatelessWidget {
       title: 'Acorde',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const _StartupGate(),
+      home: const SplashScreen(),
     );
   }
 }

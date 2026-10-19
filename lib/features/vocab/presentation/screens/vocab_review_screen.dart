@@ -244,9 +244,16 @@ class _VocabReviewScreenState extends ConsumerState<VocabReviewScreen> with Sing
             style: AppTypography.label(color: AppColors.textMuted),
           ),
           const Spacer(),
-          Text(
-            'Toque para virar e conferir a resposta ↺',
-            style: AppTypography.bodySmall(color: AppColors.supportPurple),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.touch_app_outlined, size: 16, color: AppColors.supportPurple),
+              const SizedBox(width: 6),
+              Text(
+                'Toque para virar e conferir a resposta',
+                style: AppTypography.bodySmall(color: AppColors.supportPurple),
+              ),
+            ],
           ),
         ],
       ),

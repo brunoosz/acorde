@@ -109,9 +109,16 @@ class _VocabFlipCardState extends State<VocabFlipCard> with SingleTickerProvider
                   widget.item.word,
                   style: AppTypography.bodyLarge(fontWeight: FontWeight.w700),
                 ),
-                Text(
-                  'Toque no card para ver a tradução ↺',
-                  style: AppTypography.bodySmall(color: AppColors.textMuted),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.touch_app_outlined, size: 14, color: AppColors.textMuted),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Toque para virar o card',
+                      style: AppTypography.bodySmall(color: AppColors.textMuted),
+                    ),
+                  ],
                 ),
               ],
             ),

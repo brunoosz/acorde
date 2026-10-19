@@ -21,19 +21,28 @@ class _MainScaffoldScreenState extends State<MainScaffoldScreen> {
     FloatingNavBarItem(icon: Icons.settings_rounded, label: 'Ajustes'),
   ];
 
+  static const List<Widget> _tabs = [
+    SongsListTab(),
+    VocabReviewScreen(),
+    SettingsScreen(),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.darkBackground,
       body: Stack(
         children: [
-          IndexedStack(
-            index: _currentIndex,
-            children: const [
-              SongsListTab(),
-              VocabReviewScreen(),
-              SettingsScreen(),
-            ],
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+            child: KeyedSubtree(
+              key: ValueKey<int>(_currentIndex),
+              child: _tabs[_currentIndex],
+            ),
           ),
           Positioned(
             left: 0,

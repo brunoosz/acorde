@@ -12,7 +12,7 @@ import 'package:acorde/features/vocab/presentation/screens/vocab_review_screen.d
 import 'package:acorde/main.dart';
 
 void main() {
-  testWidgets('Acorde startup gate opens Onboarding for new users', (WidgetTester tester) async {
+  testWidgets('Acorde startup gate shows splash logo and transitions to Onboarding', (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -22,7 +22,14 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+    
+    // Splash screen renders logo "a."
+    expect(find.text('a'), findsOneWidget);
+    expect(find.text('ESPANHOL RIOPLATENSE COM MÚSICA'), findsOneWidget);
+
+    // Let splash finish and transition
+    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pumpAndSettle();
 
     expect(find.byType(OnboardingScreen), findsOneWidget);
     expect(find.text('QUAL É O SEU\nOBJETIVO?'), findsOneWidget);
