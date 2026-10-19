@@ -7,6 +7,7 @@ import '../../../../core/storage/secure_storage_service.dart';
 import '../../../../core/ai_gateway/ai_gateway_service.dart';
 import '../../../onboarding/presentation/screens/profile_screen.dart';
 import '../controllers/settings_controller.dart';
+import '../../../music/data/services/spotify_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -18,22 +19,44 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late final TextEditingController _apiKeyController;
   late final TextEditingController _modelController;
+  late final TextEditingController _spotifyClientIdController;
+  late final TextEditingController _spotifyClientSecretController;
   bool _obscureApiKey = true;
+  bool _obscureSpotifySecret = true;
   bool _isTestingConnection = false;
   String? _testResult;
   bool _testSuccess = false;
+  bool _spotifyConfigured = false;
 
   @override
   void initState() {
     super.initState();
     _apiKeyController = TextEditingController();
     _modelController = TextEditingController();
+    _spotifyClientIdController = TextEditingController();
+    _spotifyClientSecretController = TextEditingController();
+    _loadSpotifyConfig();
+  }
+
+  Future<void> _loadSpotifyConfig() async {
+    final storage = ref.read(secureStorageServiceProvider);
+    final clientId = await storage.getSpotifyClientId() ?? '';
+    final clientSecret = await storage.getSpotifyClientSecret() ?? '';
+    if (mounted) {
+      setState(() {
+        _spotifyClientIdController.text = clientId;
+        _spotifyClientSecretController.text = clientSecret;
+        _spotifyConfigured = clientId.isNotEmpty && clientSecret.isNotEmpty;
+      });
+    }
   }
 
   @override
   void dispose() {
     _apiKeyController.dispose();
     _modelController.dispose();
+    _spotifyClientIdController.dispose();
+    _spotifyClientSecretController.dispose();
     super.dispose();
   }
 
@@ -255,9 +278,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: _testSuccess
-                                  ? AppColors.iconSlang.withOpacity(0.15)
-                                  : AppColors.celebrationAccent.withOpacity(0.15),
+                              color: Color.alphaBlend(
+                                (_testSuccess ? AppColors.iconSlang : AppColors.celebrationAccent).withValues(alpha: 0.15),
+                                AppColors.darkSurface,
+                              ),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: _testSuccess
@@ -294,6 +318,127 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           ),
                         ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Integração Spotify
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.darkSurface,
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: _spotifyConfigured ? AppColors.spotifyGreen : AppColors.borderSubtle,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.music_note_rounded,
+                              color: _spotifyConfigured ? AppColors.spotifyGreen : AppColors.textMuted,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'SPOTIFY',
+                              style: AppTypography.label(
+                                color: _spotifyConfigured ? AppColors.spotifyGreen : AppColors.textMuted,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (_spotifyConfigured)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.spotifyGreen.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(100),
+                                ),
+                                child: Text(
+                                  'CONECTADO',
+                                  style: AppTypography.label(color: AppColors.spotifyGreen, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Conecte o Spotify para importar músicas de playlists e buscar faixas. Crie um app grátis em developer.spotify.com.',
+                          style: AppTypography.bodySmall(color: AppColors.textMuted),
+                        ),
+                        const SizedBox(height: 16),
+
+                        Text('CLIENT ID', style: AppTypography.label(color: AppColors.textMuted)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _spotifyClientIdController,
+                          style: AppTypography.bodyMedium(color: AppColors.textLight),
+                          decoration: InputDecoration(
+                            hintText: 'Cole seu Spotify Client ID',
+                            hintStyle: AppTypography.bodyMedium(color: AppColors.textMuted),
+                            filled: true,
+                            fillColor: AppColors.darkBackground,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(100),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        Text('CLIENT SECRET', style: AppTypography.label(color: AppColors.textMuted)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _spotifyClientSecretController,
+                          obscureText: _obscureSpotifySecret,
+                          style: AppTypography.bodyMedium(color: AppColors.textLight),
+                          decoration: InputDecoration(
+                            hintText: 'Cole seu Spotify Client Secret',
+                            hintStyle: AppTypography.bodyMedium(color: AppColors.textMuted),
+                            filled: true,
+                            fillColor: AppColors.darkBackground,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(100),
+                              borderSide: BorderSide.none,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureSpotifySecret ? Icons.visibility_off : Icons.visibility,
+                                color: AppColors.textMuted,
+                              ),
+                              onPressed: () => setState(() => _obscureSpotifySecret = !_obscureSpotifySecret),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        PillButton(
+                          label: 'SALVAR CREDENCIAIS SPOTIFY',
+                          isExpanded: true,
+                          onPressed: () async {
+                            final storage = ref.read(secureStorageServiceProvider);
+                            await storage.setSpotifyClientId(_spotifyClientIdController.text);
+                            await storage.setSpotifyClientSecret(_spotifyClientSecretController.text);
+                            setState(() {
+                              _spotifyConfigured = _spotifyClientIdController.text.isNotEmpty &&
+                                  _spotifyClientSecretController.text.isNotEmpty;
+                            });
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Credenciais do Spotify salvas com segurança!'),
+                                  backgroundColor: AppColors.darkSurface,
+                                ),
+                              );
+                            }
+                          },
+                        ),
                       ],
                     ),
                   ),

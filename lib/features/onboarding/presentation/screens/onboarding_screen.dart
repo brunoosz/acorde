@@ -188,7 +188,7 @@ class OnboardingScreen extends ConsumerWidget {
             activeTrackColor: AppColors.actionGreen,
             inactiveTrackColor: AppColors.darkSurface,
             thumbColor: AppColors.actionGreen,
-            overlayColor: AppColors.actionGreen.withOpacity(0.2),
+            overlayColor: AppColors.actionGreen.withValues(alpha: 0.2),
             trackHeight: 8,
           ),
           child: Slider(

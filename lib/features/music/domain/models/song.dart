@@ -4,6 +4,7 @@ class Song {
   final String title;
   final String artist;
   final String fullLyrics;
+  final String? audioPath;
   final DateTime createdAt;
 
   const Song({
@@ -11,6 +12,7 @@ class Song {
     required this.title,
     required this.artist,
     required this.fullLyrics,
+    this.audioPath,
     required this.createdAt,
   });
 }

@@ -29,12 +29,16 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.connection);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (migrator, from, to) async {
+          if (from < 2) {
+            await customStatement('ALTER TABLE songs_table ADD COLUMN audio_path TEXT');
+          }
+        },
         beforeOpen: (details) async {
-          // Habilita chaves estrangeiras no SQLite
           await customStatement('PRAGMA foreign_keys = ON;');
         },
       );

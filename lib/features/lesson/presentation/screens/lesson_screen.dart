@@ -6,6 +6,7 @@ import '../../../../core/widgets/pill_button.dart';
 import '../../../../core/widgets/quintet_icon.dart';
 import '../../../../core/widgets/lesson_icon_row.dart';
 import '../../../../core/tts/tts_service.dart';
+import '../../../../core/widgets/audio_player_bar.dart';
 import '../../../../core/database/database_provider.dart';
 import '../../../music/domain/models/song.dart';
 import '../../../music/data/repositories/music_repository.dart';
@@ -221,6 +222,16 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Player de áudio (se disponível)
+                      if (widget.song.audioPath != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: AudioPlayerBar(
+                            audioPath: widget.song.audioPath!,
+                            songTitle: widget.song.title,
+                          ),
+                        ),
+
                       // Fileira com os 5 ícones no topo
                       LessonIconRow(
                         activeType: _selectedFilter,
@@ -232,23 +243,77 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Aviso discreto se TTS estiver usando fallback
+                      // Aviso se TTS estiver usando fallback com botão para baixar voz
                       if (tts.isFallback)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.all(14),
                           margin: const EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             color: AppColors.darkSurface,
-                            borderRadius: BorderRadius.circular(100),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.supportPurple.withValues(alpha: 0.3)),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.info_outline, size: 14, color: AppColors.supportPurple),
-                              const SizedBox(width: 6),
+                              Row(
+                                children: [
+                                  const Icon(Icons.record_voice_over_outlined, size: 18, color: AppColors.supportPurple),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Voz em espanhol argentino não encontrada',
+                                      style: AppTypography.label(color: AppColors.supportPurple),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
                               Text(
-                                'Voz: Espanhol padrão (es-AR não encontrado no aparelho)',
-                                style: AppTypography.label(color: AppColors.supportPurple),
+                                'Para melhor pronúncia, baixe a voz "Espanhol (Argentina)" nas configurações de TTS do seu dispositivo.',
+                                style: AppTypography.bodySmall(color: AppColors.textMuted),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        await tts.openTtsSettings();
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 10),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(100),
+                                          border: Border.all(color: AppColors.supportPurple, width: 1.5),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          'ABRIR CONFIG. DE VOZ',
+                                          style: AppTypography.label(color: AppColors.supportPurple, fontWeight: FontWeight.w700),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  GestureDetector(
+                                    onTap: () async {
+                                      await tts.reinitialize();
+                                      if (mounted) setState(() {});
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.actionGreen,
+                                        borderRadius: BorderRadius.circular(100),
+                                      ),
+                                      child: Text(
+                                        'RECARREGAR',
+                                        style: AppTypography.label(color: AppColors.actionText, fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -337,12 +402,12 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               Container(
                 padding: const EdgeInsets.only(top: 12),
                 decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0xFFE2DDD2))),
+                  border: Border(top: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.3))),
                 ),
                 child: Text(
                   block.translationPt,
                   style: AppTypography.bodyMedium(
-                    color: const Color(0xFF555555),
+                    color: AppColors.textMuted,
                   ),
                 ),
               ),

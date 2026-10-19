@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 final ttsServiceProvider = Provider<TtsService>((ref) {
   final service = TtsService();
@@ -25,31 +27,55 @@ class TtsService {
       final languages = await _flutterTts.getLanguages;
       final langList = (languages as List?)?.map((e) => e.toString()).toList() ?? [];
 
-      // Prioridade 1: es-AR (Espanhol Argentino)
-      if (langList.any((l) => l.toLowerCase().contains('es-ar') || l.toLowerCase().contains('es_ar'))) {
-        _activeLanguage = 'es-AR';
-        _isFallback = false;
+      // Spanish language candidates in priority order
+      const candidates = ['es-AR', 'es_AR', 'es-US', 'es_US', 'es-MX', 'es_MX', 'es-ES', 'es_ES', 'es'];
+
+      String? matched;
+      for (final candidate in candidates) {
+        final found = langList.firstWhere(
+          (l) => l.toLowerCase() == candidate.toLowerCase(),
+          orElse: () => '',
+        );
+        if (found.isNotEmpty) {
+          matched = found;
+          break;
+        }
       }
-      // Fallback 1: es-US
-      else if (langList.any((l) => l.toLowerCase().contains('es-us') || l.toLowerCase().contains('es_us'))) {
-        _activeLanguage = 'es-US';
-        _isFallback = true;
+
+      // If exact match failed, try partial match for any "es" language
+      if (matched == null) {
+        final found = langList.firstWhere(
+          (l) => l.toLowerCase().startsWith('es'),
+          orElse: () => '',
+        );
+        if (found.isNotEmpty) matched = found;
       }
-      // Fallback 2: es-ES
-      else if (langList.any((l) => l.toLowerCase().contains('es-es') || l.toLowerCase().contains('es_es'))) {
+
+      if (matched != null) {
+        _activeLanguage = matched;
+        _isFallback = !matched.toLowerCase().contains('es-ar') && !matched.toLowerCase().contains('es_ar');
+      } else {
         _activeLanguage = 'es-ES';
         _isFallback = true;
-      } else {
+      }
+
+      // Set language and verify it was accepted
+      final setResult = await _flutterTts.setLanguage(_activeLanguage);
+      if (setResult != 1) {
+        // If setLanguage failed, try the generic 'es'
+        await _flutterTts.setLanguage('es');
         _activeLanguage = 'es';
         _isFallback = true;
       }
 
-      await _flutterTts.setLanguage(_activeLanguage);
-      await _flutterTts.setSpeechRate(0.5); // Velocidade normal
+      await _flutterTts.setSpeechRate(0.48);
       await _flutterTts.setPitch(1.0);
     } catch (_) {
-      _activeLanguage = 'es-AR';
+      _activeLanguage = 'es';
       _isFallback = true;
+      try {
+        await _flutterTts.setLanguage('es');
+      } catch (_) {}
     }
 
     _isInitialized = true;
@@ -58,6 +84,8 @@ class TtsService {
   Future<void> speak(String text, {bool slow = false}) async {
     await initialize();
     await _flutterTts.stop();
+    // Re-assert language before every speak call to prevent device default fallback
+    await _flutterTts.setLanguage(_activeLanguage);
     await _flutterTts.setSpeechRate(slow ? 0.28 : 0.48);
     await _flutterTts.speak(text);
   }
@@ -72,6 +100,28 @@ class TtsService {
 
   void setCompletionHandler(void Function() handler) {
     _flutterTts.setCompletionHandler(handler);
+  }
+
+  bool get hasSpanishVoice => _isInitialized && _activeLanguage.startsWith('es');
+
+  Future<void> openTtsSettings() async {
+    if (Platform.isAndroid) {
+      final uri = Uri.parse('com.android.settings.TTS_SETTINGS');
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        // Fallback: open general settings
+        final fallback = Uri.parse('package:com.android.settings');
+        try {
+          await launchUrl(fallback, mode: LaunchMode.externalApplication);
+        } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> reinitialize() async {
+    _isInitialized = false;
+    await initialize();
   }
 
   void dispose() {
